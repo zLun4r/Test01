@@ -1,0 +1,92 @@
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
+local Window = Library.CreateLib("TITLE", "DarkTheme")
+
+-- Create a Tab for the Window
+local Tab = Window:NewTab("Main Tab")
+
+-- Create a Section in the Tab
+local Section = Tab:NewSection("Player Selection")
+
+-- Function to update the player dropdown dynamically
+local function updatePlayerDropdown()
+    local players = game.Players:GetPlayers()
+    local playerNames = {}
+
+    -- Populate the dropdown options with player names
+    for _, player in ipairs(players) do
+        table.insert(playerNames, player.Name)
+    end
+
+    return playerNames
+end
+
+-- Variable to store selected player's name
+local selectedPlayerName = nil
+
+-- Add a dropdown to select a player
+local playerDropdown = Section:NewDropdown("Select Player", "Choose a player to teleport to", updatePlayerDropdown(), function(Value)
+    selectedPlayerName = Value  -- Store the selected player's name
+    print("Selected player: " .. Value)  -- Output the selected player to the console
+end)
+
+-- Add a button to teleport the player to the selected player
+Section:NewButton("Teleport to Player", "Teleport your character to the selected player", function()
+    if selectedPlayerName then
+        local localPlayer = game.Players.LocalPlayer
+        local targetPlayer = game.Players:FindFirstChild(selectedPlayerName)
+        
+        if targetPlayer and targetPlayer.Character then
+            local targetHumanoidRootPart = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+            if targetHumanoidRootPart then
+                -- Teleport the local player to the target player's HumanoidRootPart position
+                localPlayer.Character:MoveTo(targetHumanoidRootPart.Position)
+                print("Teleporting to " .. selectedPlayerName)
+            else
+                print("Target player does not have a HumanoidRootPart.")
+            end
+        else
+            print("Target player not found or doesn't have a character.")
+        end
+    else
+        print("No player selected for teleportation.")
+    end
+end)
+
+-- Add a button to refresh the player list in the dropdown
+Section:NewButton("Refresh Player List", "Update the player list in the dropdown", function()
+    -- Update the dropdown options with the latest list of players
+    local newPlayerList = updatePlayerDropdown()
+    playerDropdown:SetOptions(newPlayerList)
+    print("Player list refreshed.")
+end)
+
+-- Optional: Update the dropdown every time the player list changes (e.g., players join or leave)
+game.Players.PlayerAdded:Connect(function()
+    local newPlayerList = updatePlayerDropdown()
+    playerDropdown:SetOptions(newPlayerList)
+end)
+
+game.Players.PlayerRemoving:Connect(function()
+    local newPlayerList = updatePlayerDropdown()
+    playerDropdown:SetOptions(newPlayerList)
+end)
+
+-- Add the ability to toggle UI with the Right Ctrl key
+local UserInputService = game:GetService("UserInputService")
+
+local isUIVisible = true  -- Track whether the UI is currently visible
+
+-- Function to toggle the UI visibility
+local function toggleUI()
+    Window:Toggle()  -- Toggle the UI (open/close)
+end
+
+-- Listen for key press to toggle the UI
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end  -- Ignore if the game processed the input
+
+    -- Check if the Right Ctrl key is pressed
+    if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == Enum.KeyCode.RightControl then
+        toggleUI()  -- Toggle the UI when Right Ctrl is pressed
+    end
+end)
